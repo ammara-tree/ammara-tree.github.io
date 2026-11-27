@@ -109,6 +109,8 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
 .ph .av{width:78px;height:78px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.28);padding:0;overflow:hidden;background:#eef6f0;flex:none;cursor:zoom-in}
 .ph .av img{width:100%;height:100%;object-fit:cover;display:block}
 .ph h2{margin:0!important}
+#phprev{position:fixed;inset:0;background:rgba(40,28,18,.55);display:none;align-items:center;justify-content:center;z-index:97;padding:16px}
+#phprev.on{display:flex}
 #lb{position:fixed;inset:0;background:rgba(0,0,0,.84);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:96;padding:16px;cursor:zoom-out}
 #lb.on{display:flex}
 #lb img{max-width:92vw;max-height:78vh;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.5);background:#222}
@@ -205,6 +207,14 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
   </div>
 </div>
 <input type="file" id="phfile" accept="image/*" style="display:none">
+<div id="phprev">
+  <div class="card" style="max-width:380px;text-align:center">
+    <h3 id="pvtitle">معاينة الصورة</h3>
+    <img id="pvimg" alt="" style="width:260px;height:260px;border-radius:50%;object-fit:cover;border:4px solid #fff;box-shadow:0 4px 18px rgba(0,0,0,.35);background:#fff;margin:8px auto 10px;display:block">
+    <div id="pvnote" style="font-size:13px;color:#6b5c45;min-height:20px;margin-bottom:8px"></div>
+    <div class="row" style="justify-content:center"><button class="btn pri" id="pvsave">حفظ هذه الصورة</button><button class="btn" id="pvtoggle">عرض الأصلية</button><button class="btn" id="pvcancel">إلغاء</button></div>
+  </div>
+</div>
 <div id="lb"><img id="lbimg" alt=""><span id="lbcap"></span></div>
 <div id="usersm">
   <div class="card" style="max-width:420px">
@@ -1255,17 +1265,100 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
       delete PH[window.__photoKey(n)];refreshPanel();toast('تم حذف الصورة');
     }
   };
+  /* --- معالجة الصورة: خلفية بيضاء وقصّ وجه وكتفين --- */
+  var SEG_BASE='https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/';
+  function loadImg(file){
+    return new Promise(function(res,rej){
+      var url=URL.createObjectURL(file),im=new Image();
+      im.onload=function(){URL.revokeObjectURL(url);res(im)};
+      im.onerror=function(){URL.revokeObjectURL(url);rej(new Error('تعذرت قراءة الصورة'))};
+      im.src=url;
+    });
+  }
+  function jpegOf(canvas){
+    var q=.84,d=canvas.toDataURL('image/jpeg',q);
+    while(d.length>380000&&q>.4){q-=.1;d=canvas.toDataURL('image/jpeg',q)}
+    return d;
+  }
+  async function loadSeg(){
+    if(window.__seg)return window.__seg;
+    if(!window.SelfieSegmentation){
+      await new Promise(function(res,rej){
+        var sc=document.createElement('script');sc.src=SEG_BASE+'selfie_segmentation.js';sc.crossOrigin='anonymous';
+        sc.onload=res;sc.onerror=function(){rej(new Error('تعذر تحميل أداة إزالة الخلفية'))};
+        document.head.appendChild(sc);setTimeout(function(){rej(new Error('انتهت مهلة تحميل أداة إزالة الخلفية'))},40000);
+      });
+    }
+    var seg=new window.SelfieSegmentation({locateFile:function(f){return SEG_BASE+f}});
+    seg.setOptions({modelSelection:0});
+    window.__seg=seg;return seg;
+  }
+  function segment(seg,canvas){
+    return new Promise(function(res,rej){
+      var t=setTimeout(function(){rej(new Error('انتهت مهلة المعالجة'))},60000);
+      seg.onResults(function(r){clearTimeout(t);res(r)});
+      Promise.resolve(seg.send({image:canvas})).catch(function(e){clearTimeout(t);rej(e)});
+    });
+  }
+  function maskBox(mask,W,H){
+    var w=160,h=Math.max(1,Math.round(160*H/W)),c=document.createElement('canvas');c.width=w;c.height=h;
+    var x=c.getContext('2d');x.drawImage(mask,0,0,w,h);
+    var d=x.getImageData(0,0,w,h).data,x0=w,y0=h,x1=-1,y1=-1,cnt=0;
+    for(var y=0;y<h;y++)for(var xx=0;xx<w;xx++){if(d[(y*w+xx)*4+3]>128){cnt++;if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(y<y0)y0=y;if(y>y1)y1=y}}
+    if(cnt<w*h*.02)return null;
+    var k=W/w;return {x:x0*k,y:y0*k,w:(x1-x0+1)*k,h:(y1-y0+1)*k};
+  }
+  async function blackPortrait(file){
+    var im=await loadImg(file),sc=Math.min(1,1024/Math.max(im.naturalWidth,im.naturalHeight));
+    var W=Math.round(im.naturalWidth*sc),H=Math.round(im.naturalHeight*sc);
+    var base=document.createElement('canvas');base.width=W;base.height=H;base.getContext('2d').drawImage(im,0,0,W,H);
+    var seg=await loadSeg(),r=await segment(seg,base);
+    if(!r||!r.segmentationMask)throw new Error('لم تصل نتيجة التقسيم');
+    var box=maskBox(r.segmentationMask,W,H);
+    if(!box)throw new Error('لم أجد شخصاً واضحاً في الصورة');
+    var cut=document.createElement('canvas');cut.width=W;cut.height=H;var cx=cut.getContext('2d');
+    try{cx.filter='blur(1.2px)'}catch(_){}
+    cx.drawImage(r.segmentationMask,0,0,W,H);
+    try{cx.filter='none'}catch(_){}
+    cx.globalCompositeOperation='source-in';cx.drawImage(base,0,0,W,H);
+    var out=document.createElement('canvas');out.width=W;out.height=H;var ox=out.getContext('2d');
+    ox.fillStyle='#fff';ox.fillRect(0,0,W,H);ox.drawImage(cut,0,0);
+    // قصّ مربع: الرأس والكتفان
+    var side=Math.max(box.w*1.22,Math.min(box.h,box.w*1.45)),centerX=box.x+box.w/2;
+    var sx=centerX-side/2,sy=box.y-side*.09,S=560,fin=document.createElement('canvas');fin.width=fin.height=S;
+    var fx=fin.getContext('2d');fx.fillStyle='#fff';fx.fillRect(0,0,S,S);fx.drawImage(out,sx,sy,side,side,0,0,S,S);
+    return jpegOf(fin);
+  }
+  var pv=null;
+  function pvShow(){
+    $('#pvimg').src=pv.showProc?pv.proc:pv.orig;
+    $('#pvtoggle').style.display=pv.proc?'':'none';
+    $('#pvtoggle').textContent=pv.showProc?'عرض الأصلية':'عرض المعالجة';
+    $('#pvtitle').textContent=pv.showProc?'الصورة بعد المعالجة':'الصورة الأصلية';
+    $('#pvnote').textContent=pv.proc?(pv.showProc?'خلفية بيضاء وقصّ للوجه والكتفين. يمكنك مقارنتها بالأصلية قبل الحفظ.':'هذه الصورة بدون أي تعديل على الخلفية.'):('لم تُعالج الخلفية: '+(pv.err||'خطأ غير معروف')+'. سيُحفظ الأصل مقصوصاً مربعاً.');
+  }
+  async function uploadPhoto(n,d){
+    toast('جاري رفع الصورة...');
+    var res=await post({action:'photo',user:cred.u,pass:cred.p,path:pathOf(n),image:d});
+    if(!res.ok){toast(res.error||'تعذر رفع الصورة');dead(res.error);return}
+    PH[window.__photoKey(n)]=res.id;refreshPanel();toast('تم حفظ صورة «'+n.name+'»');
+  }
+  $('#pvcancel').onclick=function(){$('#phprev').classList.remove('on');pv=null};
+  $('#pvtoggle').onclick=function(){if(pv){pv.showProc=!pv.showProc;pvShow()}};
+  $('#pvsave').onclick=async function(){
+    if(!pv)return;var p=pv;$('#phprev').classList.remove('on');pv=null;
+    try{await uploadPhoto(p.n,p.showProc?p.proc:p.orig)}catch(e){toast('تعذر رفع الصورة')}
+  };
   $('#phfile').onchange=async function(){
     var f=this.files&&this.files[0],n=phTarget;if(!f||!n)return;
     if(!/^image\//.test(f.type)){toast('اختر ملف صورة');return}
     try{
       toast('جاري تجهيز الصورة...');
-      var d=await squareJpeg(f);
-      toast('جاري رفع الصورة...');
-      var res=await post({action:'photo',user:cred.u,pass:cred.p,path:pathOf(n),image:d});
-      if(!res.ok){toast(res.error||'تعذر رفع الصورة');dead(res.error);return}
-      PH[window.__photoKey(n)]=res.id;refreshPanel();toast('تم حفظ صورة «'+n.name+'»');
-    }catch(e){toast(e&&e.message?e.message:'تعذر رفع الصورة')}
+      var orig=await squareJpeg(f),proc=null,err='';
+      try{toast(window.__seg?'جاري إزالة الخلفية...':'جاري تحميل أداة إزالة الخلفية (أول مرة فقط)...');proc=await blackPortrait(f)}
+      catch(e){err=(e&&e.message)||''}
+      pv={n:n,orig:orig,proc:proc,err:err,showProc:!!proc};pvShow();$('#phprev').classList.add('on');
+    }catch(e){toast(e&&e.message?e.message:'تعذر تجهيز الصورة')}
   };
   $('#lb').onclick=function(){$('#lb').classList.remove('on')};
   document.addEventListener('keydown',function(e){if(e.key==='Escape')$('#lb').classList.remove('on')});
