@@ -94,6 +94,13 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
 .stat{background:#f4ede0;border-radius:12px;text-align:center;padding:8px 2px}
 .stat b{display:block;font-size:18px;color:var(--brown)}
 .stat span{font-size:11.5px;color:var(--muted)}
+.stat.tap{border:0;font:inherit;cursor:pointer;width:100%;color:inherit}
+.stat.tap:hover{background:#ece1cd}
+.stat.act{background:#dcefe2;box-shadow:inset 0 0 0 2px #2f9a5b}
+.stlist{margin:-4px 0 10px;max-height:240px;overflow:auto;border:1px solid #e7dcc4;border-radius:12px;padding:8px 10px;background:#fffdf6}
+.stlist .gh{font-size:12.5px;font-weight:700;color:var(--green-d);margin:2px 0 6px}
+.stlist .gh.sub{color:var(--muted);margin-top:10px}
+
 .sec{font-size:12.5px;font-weight:700;color:var(--muted);margin:10px 0 6px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{border:1px solid #cfe3d6;background:#eef6f0;color:var(--green-d);border-radius:20px;padding:4px 11px;font-size:13px;font-weight:600}
@@ -832,13 +839,32 @@ function showPanel(n){
   panel.innerHTML='<button class="x" data-act="close" title="إلغاء التحديد">×</button>'+
    (function(){var u=window.__photoUrl&&window.__photoUrl(n,240);return u?'<div class="ph"><button class="av" data-act="zoom" title="تكبير الصورة"><img src="'+u+'" alt="" referrerpolicy="no-referrer"></button><h2>'+esc(n.name)+'</h2></div>':'<h2>'+esc(n.name)+'</h2>'})()+
    '<div class="lin">'+esc(lineageText(n))+'</div>'+
-   '<div class="stats"><div class="stat"><b>'+n.depth+'</b><span>الجيل</span></div><div class="stat"><b>'+n.kids.length+'</b><span>الأبناء</span></div><div class="stat"><b>'+sib+'</b><span>الإخوة</span></div><div class="stat"><b>'+n.desc+'</b><span>الأحفاد</span></div></div>'+
-   par+(kids?'<div class="sec">الأبناء</div><div class="chips">'+kids+'</div>':'')+
+   '<div class="stats"><div class="stat"><b>'+n.depth+'</b><span>الجيل</span></div>'+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(n.kids.length,'kids','الأبناء')+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(sib,'sibs','الإخوة')+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(n.desc,'desc','الأحفاد')+'</div><div id="stl" class="stlist" hidden></div>'+
+   par+
    '<div class="row"><button class="btn" data-act="copy">نسخ النسب</button><button class="btn" data-act="fit">كل الشجرة</button></div>'+editRow(n);
   panel.hidden=false;
 }
+
+function toggleStat(kind,btn){
+  var n=NODES.get(selId),box=document.getElementById('stl');if(!n||!box)return;
+  var was=btn.classList.contains('act');
+  panel.querySelectorAll('.stat.act').forEach(function(x){x.classList.remove('act')});
+  if(was){box.hidden=true;box.innerHTML='';return}
+  btn.classList.add('act');
+  function chips(a){return '<div class="chips">'+a.map(function(k){return '<button class="chip" data-go="'+esc(k.id)+'">'+esc(k.name)+'</button>'}).join('')+'</div>'}
+  var h='';
+  if(kind==='kids')h='<div class="gh">أبناء '+esc(n.name)+' ('+n.kids.length+')</div>'+chips(n.kids);
+  else if(kind==='sibs'){var sb=n.parent?n.parent.kids.filter(function(k){return k!==n}):[];h='<div class="gh">إخوة '+esc(n.name)+' ('+sb.length+')</div>'+chips(sb)}
+  else{
+    var lvl=n.kids.slice(),d=1;
+    h='<div class="gh">كل أحفاد '+esc(n.name)+' ('+n.desc+')</div>';
+    while(lvl.length){h+='<div class="gh sub">الجيل '+(n.depth+d)+' — '+lvl.length+'</div>'+chips(lvl);var nx=[];lvl.forEach(function(k){k.kids.forEach(function(c){nx.push(c)})});lvl=nx;d++}
+  }
+  box.innerHTML=h;box.hidden=false;
+}
 panel.addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b)return;
+  if(b.dataset.open&&selId){toggleStat(b.dataset.open,b);return}
   if(b.dataset.go)select(b.dataset.go);
   else if(b.dataset.act==='close'){clearSel();}
   else if(b.dataset.act==='fit'){clearSel();fit(true)}
@@ -1508,11 +1534,11 @@ function printPoster(){
   '#apx b{display:block;margin-top:calc(var(--cw,40mm)*.04);font-size:calc(var(--cw,40mm)*.095)}#apx small{display:block;font-size:calc(var(--cw,40mm)*.062);color:#555;line-height:1.35}'+
   '@media screen{#apx{width:min(94vw,900px);margin:16px auto;box-sizing:border-box;box-shadow:0 4px 24px rgba(0,0,0,.25);--cw:150px}}'+
   '@media screen{#sheet{margin:16px auto;box-shadow:0 4px 24px rgba(0,0,0,.25);width:min(94vw,900px);aspect-ratio:841/1189}}'+
-  '@media print{#bar{display:none}#sheet{margin:0}}</style><style id="pg">@page{size:841mm 1189mm;margin:0}@media print{#sheet{width:841mm;height:1189mm}}</style></head><body>'+
+  '@media print{#bar{display:none}#sheet{margin:0}}</style><style id="pg">@page{size:841mm 1189mm;margin:0}@media print{#sheet{width:100%;height:99.5vh;overflow:hidden}#sheet svg{width:100%;height:100%}}</style></head><body>'+
   '<div id="bar"><span>مقاس الورق:</span><select id="sz"><option value="A0R">A0 بعرض 841 مم وبنسبة اللوحة (بلا فراغ)</option><option value="A0">A0 قياسي (841×1189 مم)</option><option value="A1">A1</option><option value="A2">A2</option><option value="A3">A3</option><option value="A4">A4</option></select>'+
-  (hasPh?'<label style="display:flex;gap:6px;align-items:center"><input type="radio" name="ph" id="ph1" checked>مع صور الأشخاص على الشجرة ('+phs.length+')</label><label style="display:flex;gap:6px;align-items:center"><input type="radio" name="ph" id="ph0">بدون صور (أسماء فقط)</label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ax">إضافة صفحة بصور كبيرة</label>':'')+'<button id="go">طباعة / حفظ PDF</button><span style="font-weight:400;opacity:.85">في نافذة الطباعة اختر «حفظ كـ PDF»، والهوامش: بلا، وفعّل «رسومات الخلفية».</span></div>'+
+  (hasPh?'<label style="display:flex;gap:6px;align-items:center"><input type="radio" name="ph" id="ph1" checked>مع صور الأشخاص على الشجرة ('+phs.length+')</label><label style="display:flex;gap:6px;align-items:center"><input type="radio" name="ph" id="ph0">بدون صور (أسماء فقط)</label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ax">إضافة صفحة بصور كبيرة</label>':'')+'<button id="go">طباعة / حفظ PDF</button><span style="font-weight:400;opacity:.85">في نافذة الطباعة: الوجهة «حفظ كـ PDF»، الهوامش «بلا»، فعّل «رسومات الخلفية». وإن لم يظهر A0 في قائمة الورق فاختر أي مقاس (مثل A3): اللوحة تتسع تلقائياً، والمطبعة تكبّر الملف إلى A0 دون خسارة الجودة.</span></div>'+
   '<div id="sheet"><svg xmlns="http://www.w3.org/2000/svg" class="th-'+themeKey+'" viewBox="0 0 '+f1(w)+' '+f1(h)+'">'+defs+'<g id="gA">'+withHtml+'</g>'+(hasPh?'<g id="gB" style="display:none">'+withoutHtml+'</g>':'')+'</svg></div>'+apx+
-  '<script>(function(){var S='+JSON.stringify(sizes)+';function set(k){var d=S[k];document.getElementById("pg").textContent="@page{size:"+d[0]+"mm "+d[1]+"mm;margin:0}@media print{#sheet{width:"+d[0]+"mm;height:"+d[1]+"mm}}";document.getElementById("sheet").style.aspectRatio=d[0]+"/"+d[1];document.getElementById("pg").setAttribute("data-cw",d[2]);document.documentElement.style.setProperty("--cw",d[2]+"mm")}'+
+  '<script>(function(){var S='+JSON.stringify(sizes)+';function set(k){var d=S[k];document.getElementById("pg").textContent="@page{size:"+d[0]+"mm "+d[1]+"mm;margin:0}@media print{#sheet{width:100%;height:99.5vh;overflow:hidden}#sheet svg{width:100%;height:100%}}";document.getElementById("sheet").style.aspectRatio=d[0]+"/"+d[1];document.getElementById("pg").setAttribute("data-cw",d[2]);document.documentElement.style.setProperty("--cw",d[2]+"mm")}'+
   'document.getElementById("sz").onchange=function(){set(this.value)};var r1=document.getElementById("ph1"),r0=document.getElementById("ph0");function tg(){var a=document.getElementById("gA"),b=document.getElementById("gB");if(a&&b){a.style.display=r1.checked?"":"none";b.style.display=r1.checked?"none":""}}if(r1){r1.onchange=tg;r0.onchange=tg}var ax=document.getElementById("ax");if(ax)ax.onchange=function(){var a=document.getElementById("apx");if(a)a.style.display=this.checked?"":"none"};document.getElementById("go").onclick=function(){window.print()};set("A0R")})();<\/script></body></html>';
   pw.document.open();pw.document.write(html);pw.document.close();
 }
