@@ -171,6 +171,7 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
   <button class="btn" id="btnUsers" style="display:none">إدارة المحررين</button>
   <button class="btn" id="btnLogin" style="display:none">دخول المحرر</button>
   <button class="btn" id="btnTheme">الخلفية: فاتح</button>
+  <button class="btn" id="btnPrint">🖨 طباعة اللوحة</button>
   <button class="btn" id="btnData">تحميل البيانات</button>
 </header>
 
@@ -625,6 +626,11 @@ function edgePath(n,g){
   var all=L.concat(R.reverse());
   return 'M'+all.map(function(p){return f1(p[0])+' '+f1(p[1])}).join('L')+'Z';
 }
+var __pcn=0;
+function photoMedal(url,col,cx,cy,r){
+  var id='pc'+(++__pcn);
+  return '<g class="leafg phm"><clipPath id="'+id+'"><circle cx="'+f1(cx)+'" cy="'+f1(cy)+'" r="'+r+'"/></clipPath><circle cx="'+f1(cx)+'" cy="'+f1(cy)+'" r="'+(r+2)+'" fill="#fff" stroke="'+col+'" stroke-width="2.4"/><circle cx="'+f1(cx)+'" cy="'+f1(cy)+'" r="'+r+'" fill="'+col+'" fill-opacity=".18"/><image href="'+url+'" x="'+f1(cx-r)+'" y="'+f1(cy-r)+'" width="'+(2*r)+'" height="'+(2*r)+'" preserveAspectRatio="xMidYMid slice" clip-path="url(#'+id+')" referrerpolicy="no-referrer"/></g>';
+}
 function labelSvg(n,g){
   var left=Math.sin(n.a)<0,phi=Math.atan2(-Math.cos(n.a),Math.sin(n.a))*180/Math.PI;
   var isLeaf=n!==C&&!n.kids.length,s='',id=esc(n.id);
@@ -642,12 +648,13 @@ function labelSvg(n,g){
     col=COLS[(Math.max(1,n.lvl)-1)%8];var fs=L.fs,w2=L.w,h=L.h,len=L.len,wid=len*.36;
     var sx=L.left?-1:1,tx=sx*(len+5);
     var leaf='<g class="leafg" transform="scale('+sx+' 1)"><path d="'+leafPath(len,wid)+'" fill="'+col+'" fill-opacity=".78" stroke="'+col+'" stroke-width=".9"/><path d="M'+f1(len*.1)+' 0L'+f1(len*.86)+' 0" stroke="#d8f2c8" stroke-width=".7" opacity=".7"/></g>';
+    var pu=(!window.__hidePhotos&&window.__photoUrl?window.__photoUrl(n,120):'');if(pu)leaf=photoMedal(pu,col,sx*14,0,10.6);tx+=sx*5;
     var px=L.left?-(len+5+w2+6):(len+1);
     return '<g class="lab" data-id="'+id+'" transform="translate('+f1(n.x)+' '+f1(n.y)+') rotate('+f1(L.rot)+')"><rect class="pill" x="'+f1(px)+'" y="-10" width="'+f1(w2+10)+'" height="20" rx="6"/><rect class="hit" x="'+f1(px-2)+'" y="-11" width="'+f1(w2+14)+'" height="22"/>'+leaf+'<text class="tx" x="'+f1(tx)+'" y="4.5" text-anchor="'+(L.left?'end':'start')+'" style="font-size:'+fs+'px;fill:'+col+'">'+esc(n.name)+'</text></g>';
   }
   col=COLS[(Math.max(1,n.lvl)-1)%8];
   var ty=L.side<0?-4:L.fs-1;
-  return '<g class="lab" data-id="'+id+'" transform="translate('+f1(n.x)+' '+f1(n.y)+') rotate('+f1(L.rot)+')"><rect class="pill" x="'+f1(L.x0-2)+'" y="'+f1(L.y0-2)+'" width="'+f1(L.x1-L.x0+4)+'" height="'+f1(L.y1-L.y0+4)+'" rx="6"/><rect class="hit" x="'+f1(L.x0-4)+'" y="'+f1(L.y0-4)+'" width="'+f1(L.x1-L.x0+8)+'" height="'+f1(L.y1-L.y0+8)+'"/><circle class="dot" r="4" fill="'+col+'" stroke="#fff" stroke-width="1.3"/><text class="tx" x="'+(L.left?L.gap:-L.gap)+'" y="'+f1(ty)+'" text-anchor="'+(L.left?'start':'end')+'" style="font-size:'+f1(L.fs)+'px;fill:'+col+'">'+esc(n.name)+'</text></g>';
+  return '<g class="lab" data-id="'+id+'" transform="translate('+f1(n.x)+' '+f1(n.y)+') rotate('+f1(L.rot)+')"><rect class="pill" x="'+f1(L.x0-2)+'" y="'+f1(L.y0-2)+'" width="'+f1(L.x1-L.x0+4)+'" height="'+f1(L.y1-L.y0+4)+'" rx="6"/><rect class="hit" x="'+f1(L.x0-4)+'" y="'+f1(L.y0-4)+'" width="'+f1(L.x1-L.x0+8)+'" height="'+f1(L.y1-L.y0+8)+'"/><circle class="dot" r="4" fill="'+col+'" stroke="#fff" stroke-width="1.3"/>'+(function(){var pu=(!window.__hidePhotos&&window.__photoUrl?window.__photoUrl(n,120):'');return pu?photoMedal(pu,col,0,0,8.6):''})()+'<text class="tx" x="'+(L.left?L.gap+(!window.__hidePhotos&&window.__photoUrl&&window.__photoUrl(n,50)?8:0):-L.gap-(!window.__hidePhotos&&window.__photoUrl&&window.__photoUrl(n,50)?8:0))+'" y="'+f1(ty)+'" text-anchor="'+(L.left?'start':'end')+'" style="font-size:'+f1(L.fs)+'px;fill:'+col+'">'+esc(n.name)+'</text></g>';
 }
 
 /* ---------- وضع الأسماء دون تداخل ---------- */
@@ -718,7 +725,7 @@ function resolveLabels(g){
 }
 
 function render(){
-  var g=layout();dims={w:g.Ww,h:g.H};resolveLabels(g);
+  __pcn=0;var g=layout();dims={w:g.Ww,h:g.H};resolveLabels(g);
   starPattern();
   var s=[posterSvg(g),'<g id="tree">',groundSvg(g)];
   var rg='',k,a0=-SPAN-.09,a1=SPAN+.09;
@@ -1253,7 +1260,7 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
   window.__photoKey=function(n){return pathOf(n).map(k_).join('>')};
   window.__photoUrl=function(n,sz){var id=API_URL&&PH[window.__photoKey(n)];return id?('https://drive.google.com/thumbnail?id='+encodeURIComponent(id)+'&sz=w'+(sz||240)):''};
   async function loadPhotos(){
-    try{var r=await fetch(API_URL+(API_URL.indexOf('?')<0?'?':'&')+'action=photos&_t='+Date.now(),{cache:'no-store'});var j=await r.json();if(j&&j.ok){PH=j.photos||{};refreshPanel()}}catch(_){}
+    try{var r=await fetch(API_URL+(API_URL.indexOf('?')<0?'?':'&')+'action=photos&_t='+Date.now(),{cache:'no-store'});var j=await r.json();if(j&&j.ok){PH=j.photos||{};refreshPanel();if(Object.keys(PH).length&&window.__rerender)window.__rerender()}}catch(_){}
   }
   function squareJpeg(file){
     return new Promise(function(res,rej){
@@ -1279,7 +1286,7 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
       toast('جاري حذف الصورة...');
       var res=await post({action:'photodel',user:cred.u,pass:cred.p,path:pathOf(n)});
       if(!res.ok){toast(res.error||'تعذر الحذف');dead(res.error);return}
-      delete PH[window.__photoKey(n)];refreshPanel();toast('تم حذف الصورة');
+      delete PH[window.__photoKey(n)];refreshPanel();if(window.__rerender)window.__rerender();toast('تم حذف الصورة');
     }
   };
   /* --- معالجة الصورة: خلفية بيضاء وقصّ وجه وكتفين --- */
@@ -1382,7 +1389,7 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
     toast('جاري رفع الصورة...');
     var res=await post({action:'photo',user:cred.u,pass:cred.p,path:pathOf(n),image:d});
     if(!res.ok){toast(res.error||'تعذر رفع الصورة');dead(res.error);return}
-    PH[window.__photoKey(n)]=res.id;refreshPanel();toast('تم حفظ صورة «'+n.name+'»');
+    PH[window.__photoKey(n)]=res.id;refreshPanel();if(window.__rerender)window.__rerender();toast('تم حفظ صورة «'+n.name+'»');
   }
   $('#pvcancel').onclick=function(){$('#phprev').classList.remove('on');pv=null};
   $('#pvtoggle').onclick=function(){if(pv){pv.showProc=!pv.showProc;pvShow()}};
@@ -1472,7 +1479,44 @@ function setTheme(k,rr){
   if(rr!==false){var id=selId,keep={x:view.x,y:view.y,k:view.k};render();view=keep;apply();if(id&&NODES.get(id)){selId=null;select(id)}}
 }
 window.setTheme=setTheme;
+window.__rerender=function(){var id=selId,keep={x:view.x,y:view.y,k:view.k};render();view=keep;apply();if(id&&NODES.get(id)){selId=null;select(id)}};
 $('#btnTheme').onclick=function(){var ks=Object.keys(THEMES);setTheme(ks[(ks.indexOf(themeKey)+1)%ks.length])};
+
+/* ---------- طباعة اللوحة (PDF حاد بمقاس A0 أو غيره) ---------- */
+function printPoster(){
+  var w=dims.w,h=dims.h;if(!w||!h){toast('لا توجد شجرة للطباعة');return}
+  var css=[].map.call(document.querySelectorAll('style'),function(x){return x.textContent}).join('\n');
+  var defs=document.querySelector('#svg defs').outerHTML;
+  function cleanClone(){var q=poster.cloneNode(true);q.querySelectorAll('.path,.desc,.sel').forEach(function(e){e.classList.remove('path','desc','sel')});return q.innerHTML}
+  var withHtml=cleanClone(),withoutHtml='',hasPh=false;
+  var phs0=ALL.filter(function(n){return n!==T&&window.__photoUrl&&window.__photoUrl(n,50)});
+  if(phs0.length&&window.__rerender){hasPh=true;window.__hidePhotos=true;window.__rerender();withoutHtml=cleanClone();window.__hidePhotos=false;window.__rerender()}
+  var pw=window.open('','_blank');
+  if(!pw){toast('اسمح بالنوافذ المنبثقة ثم أعد المحاولة');return}
+  var sizes={A0R:[841,Math.round(841*h/w),90],A0:[841,1189,90],A1:[594,841,64],A2:[420,594,45],A3:[297,420,32],A4:[210,297,24]};
+  var phs=ALL.filter(function(n){return n!==T&&window.__photoUrl&&window.__photoUrl(n,50)}).sort(function(a,b){return a.lvl-b.lvl});
+  function lineage(n){var a=[n.name],p=n.parent,i=0;while(p&&p!==T&&i<3){a.push(p.name);p=p.parent;i++}return a.join(' بن ')}
+  var apx=phs.length?'<div id="apx" style="display:none"><h2>ملحق الصور — '+esc(treeTitle)+'</h2><div class="grid">'+phs.map(function(n){var col=COLS[(Math.max(1,n.lvl)-1)%8];return '<div class="pc"><img src="'+window.__photoUrl(n,420)+'" referrerpolicy="no-referrer" style="border-color:'+col+'"><b>'+esc(n.name)+'</b><small>'+esc(lineage(n))+'</small></div>'}).join('')+'</div></div>':'';
+  var html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>'+esc(treeTitle)+'</title><style>'+css+
+  '\nhtml,body{margin:0;padding:0;background:#fff;height:auto;overflow:visible}body{display:block}'+
+  '#bar{position:sticky;top:0;z-index:5;background:#17382a;color:#fff;padding:10px 16px;font:600 14px Cairo,Tahoma,sans-serif;display:flex;gap:12px;align-items:center;flex-wrap:wrap}'+
+  '#bar select,#bar button{font:600 14px Cairo,Tahoma,sans-serif;padding:6px 12px;border-radius:8px;border:0}#bar button{background:#d9a520;color:#2a1c00;cursor:pointer}'+
+  '#sheet{display:flex;align-items:center;justify-content:center;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '#sheet svg{display:block;direction:ltr;width:100%;height:auto;max-height:100%;filter:none}'+
+  '#apx{break-before:page;padding:calc(var(--cw,40mm)*.5);background:#fff;direction:rtl;font-family:Cairo,Tahoma,sans-serif;color:#1b1b1b}#apx h2{margin:0 0 calc(var(--cw,40mm)*.3);font-size:calc(var(--cw,40mm)*.16);text-align:center;color:#17382a}'+
+  '#apx .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw,40mm),1fr));gap:calc(var(--cw,40mm)*.12)}#apx .pc{break-inside:avoid;text-align:center}#apx img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:50%;border:calc(var(--cw,40mm)*.025) solid #999;background:#eee;display:block}'+
+  '#apx b{display:block;margin-top:calc(var(--cw,40mm)*.04);font-size:calc(var(--cw,40mm)*.095)}#apx small{display:block;font-size:calc(var(--cw,40mm)*.062);color:#555;line-height:1.35}'+
+  '@media screen{#apx{width:min(94vw,900px);margin:16px auto;box-sizing:border-box;box-shadow:0 4px 24px rgba(0,0,0,.25);--cw:150px}}'+
+  '@media screen{#sheet{margin:16px auto;box-shadow:0 4px 24px rgba(0,0,0,.25);width:min(94vw,900px);aspect-ratio:841/1189}}'+
+  '@media print{#bar{display:none}#sheet{margin:0}}</style><style id="pg">@page{size:841mm 1189mm;margin:0}@media print{#sheet{width:841mm;height:1189mm}}</style></head><body>'+
+  '<div id="bar"><span>مقاس الورق:</span><select id="sz"><option value="A0R">A0 بعرض 841 مم وبنسبة اللوحة (بلا فراغ)</option><option value="A0">A0 قياسي (841×1189 مم)</option><option value="A1">A1</option><option value="A2">A2</option><option value="A3">A3</option><option value="A4">A4</option></select>'+
+  (hasPh?'<label style="display:flex;gap:6px;align-items:center"><input type="radio" name="ph" id="ph1" checked>مع صور الأشخاص على الشجرة ('+phs.length+')</label><label style="display:flex;gap:6px;align-items:center"><input type="radio" name="ph" id="ph0">بدون صور (أسماء فقط)</label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ax">إضافة صفحة بصور كبيرة</label>':'')+'<button id="go">طباعة / حفظ PDF</button><span style="font-weight:400;opacity:.85">في نافذة الطباعة اختر «حفظ كـ PDF»، والهوامش: بلا، وفعّل «رسومات الخلفية».</span></div>'+
+  '<div id="sheet"><svg xmlns="http://www.w3.org/2000/svg" class="th-'+themeKey+'" viewBox="0 0 '+f1(w)+' '+f1(h)+'">'+defs+'<g id="gA">'+withHtml+'</g>'+(hasPh?'<g id="gB" style="display:none">'+withoutHtml+'</g>':'')+'</svg></div>'+apx+
+  '<script>(function(){var S='+JSON.stringify(sizes)+';function set(k){var d=S[k];document.getElementById("pg").textContent="@page{size:"+d[0]+"mm "+d[1]+"mm;margin:0}@media print{#sheet{width:"+d[0]+"mm;height:"+d[1]+"mm}}";document.getElementById("sheet").style.aspectRatio=d[0]+"/"+d[1];document.getElementById("pg").setAttribute("data-cw",d[2]);document.documentElement.style.setProperty("--cw",d[2]+"mm")}'+
+  'document.getElementById("sz").onchange=function(){set(this.value)};var r1=document.getElementById("ph1"),r0=document.getElementById("ph0");function tg(){var a=document.getElementById("gA"),b=document.getElementById("gB");if(a&&b){a.style.display=r1.checked?"":"none";b.style.display=r1.checked?"none":""}}if(r1){r1.onchange=tg;r0.onchange=tg}var ax=document.getElementById("ax");if(ax)ax.onchange=function(){var a=document.getElementById("apx");if(a)a.style.display=this.checked?"":"none"};document.getElementById("go").onclick=function(){window.print()};set("A0R")})();<\/script></body></html>';
+  pw.document.open();pw.document.write(html);pw.document.close();
+}
+$('#btnPrint').onclick=printPoster;
 var _t0=window.__theme;try{_t0=_t0||localStorage.getItem('clanTheme')}catch(_){}
 setTheme(_t0||'white',false);
 var saved=null;
