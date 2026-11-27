@@ -345,7 +345,7 @@ var THEMES={
  navy:{name:'ليلي',s0:'#0b1832',sa:'#223760',sb:'#10214a',sc:'#2a3f70',sd:'#3a5085',p0:'#11244d',p1:'#081330',vig:'#000000',vigo:.5,frame:'#c9a24a',ink:'#f4e3ab',cart:'#0f2147',line:'#c9a24a',cnt:'#eadfc2',cnt2:'#c9bd9c',cols:['#79a6ff','#ff7b72','#5fdc8c','#c39bff','#ffb454','#4fd1e8','#ff8fc4','#e5e7eb']}
 };
 var themeKey='light',PAL=THEMES.light;
-var SPAN=118*Math.PI/180, LEAF_GAP=34, F=70, LL=20, STAG=0, PREPARER='وائل صادق جعفر';
+var SPAN=118*Math.PI/180, LEAF_GAP=34,LFS=18, F=70, LL=20, STAG=0, PREPARER='وائل صادق جعفر';
 var COLS=THEMES.light.cols;
 var svg=$('#svg'),vp=$('#vp'),poster=$('#poster'),stage=$('#stage'),panel=$('#panel');
 var NODES=new Map(),ALL=[],V=null,C=null,T=null,dims={w:0,h:0},selId=null,view={x:0,y:0,k:1},raf=0,isSample=true,treeTitle='شجرة العشيرة',preparer=PREPARER;
@@ -430,7 +430,7 @@ function layout(){
   var leaves=0,maxInt=0,maxW=0;
   (function cnt(n){
     if(n!==C&&!n.kids.length)leaves++;
-    else if(n!==C){maxInt=Math.max(maxInt,n.lvl);maxW=Math.max(maxW,tw(n.name,14))}
+    else if(n!==C){maxInt=Math.max(maxInt,n.lvl);maxW=Math.max(maxW,tw(n.name,16))}
     n.kids.forEach(cnt);
   })(C);
   var step0=Math.max(122,Math.min(140,maxW+34));
@@ -454,10 +454,10 @@ function layout(){
     n.kids.forEach(rad);
   })(C);
   var maxLeafW=0;
-  ALL.forEach(function(n){if(n!==C&&!n.kids.length)maxLeafW=Math.max(maxLeafW,tw(n.name,13))});
+  ALL.forEach(function(n){if(n!==C&&!n.kids.length)maxLeafW=Math.max(maxLeafW,tw(n.name,LFS))});
   var Rout=Rleaf+STAG*2+LL+maxLeafW+44;
   var Ww=Math.max(1800,2*(Rout+200));
-  var TOP=820,cx=Ww/2,cy=TOP+Rout;
+  var TOP=690,cx=Ww/2,cy=TOP+Rout;
   var trunk=Math.max(270,Rout*.4),gy=cy+trunk;
   var H=gy+270;
   ALL.forEach(function(n){if(n===T)return;var r=n.r,a=n.a;n.x=cx+r*Math.sin(a);n.y=cy-r*Math.cos(a)});
@@ -694,7 +694,7 @@ function resolveLabels(g){
   if(!C.virtual){var wc=tw(C.name,26);add(rotRect(g.cx,g.cy+44,0,-wc/2-12,-26,wc/2+12,12),'C',true)}
   ALL.forEach(function(n){
     if(n===T||n===C||n.kids.length)return;
-    var left=Math.sin(n.a)<0,phi=Math.atan2(-Math.cos(n.a),Math.sin(n.a))*180/Math.PI,h=hash(n.id),len=LL-2+h%7,fs=13,w=tw(n.name,fs);
+    var left=Math.sin(n.a)<0,phi=Math.atan2(-Math.cos(n.a),Math.sin(n.a))*180/Math.PI,h=hash(n.id),len=LL-2+h%7,fs=LFS,w=tw(n.name,fs);
     var rot=left?phi+180:phi;
     n.lab={leaf:true,left:left,rot:rot,len:len,fs:fs,w:w,h:h};
     add(rotRect(n.x,n.y,rot,left?-(len+5+w+3):-2,-8,left?2:(len+5+w+3),8),'L'+n.id,true);
@@ -703,7 +703,7 @@ function resolveLabels(g){
   var shrunk=0;
   inner.forEach(function(n){
     var left=Math.sin(n.a)<0,phi=Math.atan2(-Math.cos(n.a),Math.sin(n.a))*180/Math.PI,rot=left?phi+180:phi;
-    var fs0=n.lvl<=1?21:n.lvl===2?19:n.lvl===3?17.5:16;
+    var fs0=n.lvl<=1?24:n.lvl===2?22:n.lvl===3?20:18.5;
     var edge=n.r-n.parent.r,skip=[n.id,n.parent.id];
     var best=null,fs=fs0;
     for(var it=0;it<8;it++,fs=Math.max(8.8,fs*.92)){
@@ -841,7 +841,7 @@ function showPanel(n){
    '<div class="lin">'+esc(lineageText(n))+'</div>'+
    '<div class="stats"><div class="stat"><b>'+n.depth+'</b><span>الجيل</span></div>'+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(n.kids.length,'kids','الأبناء')+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(sib,'sibs','الإخوة')+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(gcOf(n).length,'desc','الأحفاد')+'</div><div id="stl" class="stlist" hidden></div>'+
    par+
-   '<div class="row"><button class="btn" data-act="copy">نسخ النسب</button><button class="btn" data-act="fit">كل الشجرة</button></div>'+editRow(n);
+   ''+editRow(n);
   panel.hidden=false;
 }
 
