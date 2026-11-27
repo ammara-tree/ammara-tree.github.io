@@ -151,12 +151,32 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
 .card textarea{height:210px;direction:ltr;text-align:left;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;resize:vertical}
 .card .row{margin-top:14px}
 #err{color:#b3261e;font-size:13px;margin-top:8px;min-height:18px}
+#acts{display:contents}
+#btnMenu{display:none}
+#bnav{display:none}
 @media (max-width:720px){
-  header{gap:8px;padding:8px 10px}
-  .brand{min-width:0}
-  .search{order:3;flex-basis:100%;max-width:none}
-  #panel{left:8px;right:8px;bottom:8px;width:auto;max-height:46%}
-  .tools{top:10px;left:10px}
+  header{gap:6px 8px;padding:6px 10px;border-bottom-width:1.5px}
+  .brand{min-width:0;gap:8px}
+  .brand svg{width:30px;height:30px}
+  .brand h1{font-size:16px}
+  .brand small{font-size:11px}
+  #btnMenu{display:block;margin-inline-start:auto;padding:7px 12px;font-size:13px;order:2}
+  .search{order:3;flex-basis:100%;max-width:none;min-width:0}
+  .search input{padding:8px 40px 8px 12px;font-size:15px;border-radius:12px}
+  .search .ico{width:18px;height:18px;right:12px}
+    #btnMenu{display:none!important}
+  header,body.bd-white header,body.bd-navy header{position:fixed;top:10px;left:10px;right:10px;z-index:40;border-radius:22px;background:rgba(255,252,243,.86)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(201,162,74,.5)!important;box-shadow:0 8px 26px rgba(60,40,15,.22)!important}
+  #stage{position:fixed;inset:0;flex:none}
+  #acts{display:none;position:fixed;left:12px;right:12px;bottom:92px;z-index:45;flex-wrap:wrap;gap:8px;padding:12px;border-radius:22px;background:rgba(255,252,243,.95);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(201,162,74,.5);box-shadow:0 10px 30px rgba(60,40,15,.3)}
+  #acts.open{display:flex}
+  #acts .btn{flex:1 1 calc(50% - 8px);padding:10px 6px;font-size:13.5px;white-space:nowrap}
+  #bnav{display:flex;position:fixed;left:14px;right:14px;bottom:12px;z-index:44;justify-content:space-around;padding:8px 4px;border-radius:26px;background:rgba(255,252,243,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(201,162,74,.5);box-shadow:0 10px 30px rgba(60,40,15,.28)}
+  #bnav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:1px;font:600 10.5px Cairo,Tahoma,sans-serif;color:#6b5238;min-width:56px;padding:2px 0}
+  #bnav button span{font-size:20px;line-height:1.2}
+  #bnav button.on{color:#1f6b45;font-weight:800}
+  .tools{top:auto;bottom:96px;left:12px;gap:8px}
+  .tools button{width:38px;height:38px;border-radius:11px;font-size:18px}
+  #panel{left:8px;right:8px;bottom:90px;width:auto;max-height:50%}
 }
 </style>
 </head>
@@ -171,6 +191,8 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
     <input id="q" type="text" placeholder="اكتب اسماً… مثل: محمد علي" autocomplete="off" spellcheck="false">
     <div id="list"></div>
   </div>
+  <button class="btn" id="btnMenu" aria-label="بحث">🔍</button>
+  <div id="acts">
   <button class="btn pri" id="btnAdd">+ إضافة اسم</button>
   <button class="btn" id="btnEdit" style="display:none">✎ فتح الجدول</button>
   <button class="btn" id="btnSheet">ربط Google Sheet</button>
@@ -179,8 +201,10 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
   <button class="btn" id="btnTheme">الخلفية: فاتح</button>
   <button class="btn" id="btnPrint">🖨 طباعة اللوحة</button>
   <button class="btn" id="btnData">تحميل البيانات</button>
+  </div>
 </header>
 
+<nav id="bnav"><button data-n="tree"><span>🌳</span>الشجرة</button><button data-n="find"><span>🔍</span>بحث</button><button data-n="print"><span>🖨</span>طباعة</button><button data-n="theme"><span>🎨</span>الخلفية</button><button data-n="more"><span>☰</span>المزيد</button></nav>
 <div id="stage">
   <svg id="svg">
     <defs>
@@ -777,10 +801,12 @@ function lineageText(n){return n.lin.join(' بن ')}
 /* ---------- view ---------- */
 function apply(){vp.setAttribute('transform','translate('+view.x+' '+view.y+') scale('+view.k+')')}
 function size(){var r=stage.getBoundingClientRect();return {W:r.width,H:r.height}}
+var homeMode=true;
 function fit(animate){
   var s=size(),pad=24;
   var k=Math.max(.03,Math.min(1.2,Math.min((s.W-pad)/dims.w,(s.H-pad)/dims.h)));
   var t={k:k,x:(s.W-dims.w*k)/2,y:(s.H-dims.h*k)/2};
+  if(homeMode&&innerWidth<=720){var hk=Math.min(1.2,(s.W/dims.w)*2.2);t={k:hk,x:(s.W-dims.w*hk)/2,y:s.H-112-(dims.h-330)*hk}}
   animate?anim(t):(view=t,apply());
 }
 function anim(t,ms){
@@ -792,7 +818,7 @@ function anim(t,ms){
     if(p<1)raf=requestAnimationFrame(f);
   })(t0);
 }
-function zoomAt(cx,cy,f){
+function zoomAt(cx,cy,f){homeMode=false;
   var k=Math.max(.03,Math.min(4,view.k*f));f=k/view.k;
   view.x=cx-(cx-view.x)*f;view.y=cy-(cy-view.y)*f;view.k=k;apply();
 }
@@ -881,7 +907,7 @@ panel.addEventListener('click',function(e){
 /* ---------- pan / zoom ---------- */
 var ptrs=new Map(),drag=null,pinch=null,moved=false;
 function rel(e){var r=stage.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
-stage.addEventListener('pointerdown',function(e){
+stage.addEventListener('pointerdown',function(e){homeMode=false;
   if(e.target.closest('.tools,#panel'))return;
   ptrs.set(e.pointerId,rel(e));moved=false;cancelAnimationFrame(raf);
   if(ptrs.size===1){var p=rel(e);drag={x:p.x,y:p.y,vx:view.x,vy:view.y}}
@@ -922,7 +948,7 @@ stage.addEventListener('wheel',function(e){
 },{passive:false});
 $('#zin').onclick=function(){var s=size();cancelAnimationFrame(raf);zoomAt(s.W/2,s.H/2,1.35)};
 $('#zout').onclick=function(){var s=size();cancelAnimationFrame(raf);zoomAt(s.W/2,s.H/2,1/1.35)};
-$('#zfit').onclick=function(){clearSel();fit(true)};
+$('#zfit').onclick=function(){homeMode=false;clearSel();fit(true)};
 window.addEventListener('resize',function(){if(!selId)fit(false)});
 
 /* ---------- search ---------- */
@@ -1539,7 +1565,22 @@ function printPoster(){
   'document.getElementById("sz").onchange=function(){set(this.value)};var r1=document.getElementById("ph1"),r0=document.getElementById("ph0");function tg(){var a=document.getElementById("gA"),b=document.getElementById("gB");if(a&&b){a.style.display=r1.checked?"":"none";b.style.display=r1.checked?"none":""}}if(r1){r1.onchange=tg;r0.onchange=tg}var ax=document.getElementById("ax");if(ax)ax.onchange=function(){var a=document.getElementById("apx");if(a)a.style.display=this.checked?"":"none"};document.getElementById("go").onclick=function(){window.print()};set("M2")})();<\/script></body></html>';
   pw.document.open();pw.document.write(html);pw.document.close();
 }
-$('#btnPrint').onclick=printPoster;
+var hdr=document.querySelector('header');
+  if(innerWidth<=720)document.body.appendChild($('#acts'));
+  function srch(open){hdr.classList.toggle('s-open',open);if(open){setTimeout(function(){$('#q').focus()},30)}}
+  $('#btnMenu').onclick=function(){srch(!hdr.classList.contains('s-open'))};
+  function bn(k,on){document.querySelectorAll('#bnav button').forEach(function(x){x.classList.toggle('on',x.dataset.n===k&&on)})}
+  document.querySelector('#bnav').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;var n=b.dataset.n,acts=$('#acts');
+    if(n!=='more')acts.classList.remove('open');
+    if(n==='tree'){homeMode=true;clearSel();fit(true);bn('tree',true)}
+    else if(n==='find'){$('#q').focus()}
+    else if(n==='print'){printPoster()}
+    else if(n==='theme'){$('#btnTheme').click()}
+    else if(n==='more'){var o2=acts.classList.toggle('open');bn('more',o2)}
+  });
+  document.addEventListener('click',function(e){if(e.target.closest('#acts .btn')&&innerWidth<=720){$('#acts').classList.remove('open');bn('more',false)}});
+  $('#btnPrint').onclick=printPoster;
 var _t0=window.__theme;try{_t0=_t0||localStorage.getItem('clanTheme')}catch(_){}
 setTheme(_t0||'white',false);
 var saved=null;
