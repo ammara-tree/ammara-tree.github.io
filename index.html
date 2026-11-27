@@ -50,6 +50,10 @@ svg{width:100%;height:100%;display:block;direction:ltr}
 .lab .tx{font-family:Cairo,Tahoma,sans-serif;font-weight:700;paint-order:stroke;stroke:rgba(255,252,240,.9);stroke-width:3.2px;stroke-linejoin:round}
 .th-emerald .edge{stroke:#9aa59c}
 .th-navy .edge{stroke:#b4a98c}
+.th-white .edge{stroke:#a9a6a2}
+.th-white .bgg{opacity:.35}
+#stage.stg-white{background:#f2f2f2}
+body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:0 2px 12px rgba(0,0,0,.08)}
 .th-navy .bgg{opacity:.06}
 .th-emerald .bgg{opacity:.8}
 .th-navy .lab .tx{stroke:rgba(8,18,42,.95)}
@@ -257,6 +261,7 @@ var VERSE1="يا أيها الناس إنا خلقناكم من ذكر وأنث�
 var VERSE2="لتعارفوا إن أكرمكم عند الله أتقاكم إن الله عليم خبير";
 var STORE='clanTreeData.v3';
 var THEMES={
+ white:{name:'أبيض',s0:'#ffffff',sa:'#e8e8e8',sb:'#f6f6f6',sc:'#e2e2e2',sd:'#dcdcdc',p0:'#ffffff',p1:'#ffffff',vig:'#cfcfcf',vigo:.12,frame:'#1f6f4a',ink:'#14100c',cart:'#ffffff',line:'#2b2b2b',cnt:'#222222',cnt2:'#555555',cols:['#1d4ed8','#14181f','#c0301f','#15803d','#7c3aed','#b45309','#0f766e','#be185d']},
  light:{name:'فاتح',s0:'#f8f3e3',sa:'#dccfa8',sb:'#f1e8cb',sc:'#d6c79a',sd:'#d9c58a',p0:'#fbf7ea',p1:'#f4eed9',vig:'#c9b27a',vigo:.28,frame:'#b98f86',ink:'#14100c',cart:'#fcf6e2',line:'#3b2a14',cnt:'#2b2018',cnt2:'#4a3a2c',cols:['#1d4ed8','#14181f','#c0301f','#15803d','#7c3aed','#b45309','#0f766e','#be185d']},
  emerald:{name:'زمردي',s0:'#f5f4e6',sa:'#cfd9b8',sb:'#ebeed4',sc:'#c5d3ac',sd:'#a8c9a0',p0:'#fbf9ec',p1:'#eef1da',vig:'#6fb08e',vigo:.34,frame:'#1f6f4a',ink:'#10281c',cart:'#fbf8e6',line:'#14402b',cnt:'#1d2b22',cnt2:'#33493c',cols:['#1d4ed8','#14181f','#c0301f','#15803d','#7c3aed','#b45309','#0f766e','#be185d']},
  navy:{name:'ليلي',s0:'#0b1832',sa:'#223760',sb:'#10214a',sc:'#2a3f70',sd:'#3a5085',p0:'#11244d',p1:'#081330',vig:'#000000',vigo:.5,frame:'#c9a24a',ink:'#f4e3ab',cart:'#0f2147',line:'#c9a24a',cnt:'#eadfc2',cnt2:'#c9bd9c',cols:['#79a6ff','#f1ece0','#ff8c7c','#6fe0a0','#c9a8ff','#ffbb70','#5fe3d3','#ff93c8']}
@@ -1080,7 +1085,7 @@ function setTheme(k,rr){
   themeKey=k;PAL=THEMES[k];COLS=PAL.cols;
   var a=document.getElementById('pst0'),b=document.getElementById('pst1');
   if(a){a.setAttribute('stop-color',PAL.p0);b.setAttribute('stop-color',PAL.p1)}
-  Object.keys(THEMES).forEach(function(x){svg.classList.remove('th-'+x)});svg.classList.add('th-'+k);
+  Object.keys(THEMES).forEach(function(x){svg.classList.remove('th-'+x);stage.classList.remove('stg-'+x)});svg.classList.add('th-'+k);stage.classList.add('stg-'+k);document.body.classList.toggle('bd-white',k==='white');
   var bt=$('#btnTheme');if(bt)bt.textContent='الخلفية: '+PAL.name;
   try{localStorage.setItem('clanTheme',k)}catch(_){}
   if(rr!==false){var id=selId,keep={x:view.x,y:view.y,k:view.k};render();view=keep;apply();if(id&&NODES.get(id)){selId=null;select(id)}}
@@ -1088,7 +1093,7 @@ function setTheme(k,rr){
 window.setTheme=setTheme;
 $('#btnTheme').onclick=function(){var ks=Object.keys(THEMES);setTheme(ks[(ks.indexOf(themeKey)+1)%ks.length])};
 var _t0=window.__theme;try{_t0=_t0||localStorage.getItem('clanTheme')}catch(_){}
-setTheme(_t0||'emerald',false);
+setTheme(_t0||'white',false);
 var saved=null;
 try{saved=JSON.parse(localStorage.getItem(STORE)||'null')}catch(_){}
 if(!(saved&&saved.d&&typeof loadData(saved.d,saved.t,false,saved.p===undefined?PREPARER:saved.p)==='object'))loadData(DATA,'',true);
