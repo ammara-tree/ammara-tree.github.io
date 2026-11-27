@@ -145,6 +145,7 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
   <button class="btn" id="btnRefresh" style="display:none">⟳ تحديث من الجدول</button>
   <button class="btn" id="btnEdit" style="display:none">✎ فتح الجدول</button>
   <button class="btn" id="btnSheet">ربط Google Sheet</button>
+  <button class="btn" id="btnLogin" style="display:none">دخول المحرر</button>
   <button class="btn" id="btnTheme">الخلفية: فاتح</button>
   <button class="btn" id="btnData">تحميل البيانات</button>
 </header>
@@ -179,6 +180,17 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
     <div id="cherr" style="color:#b3261e;font-size:13px;min-height:18px"></div>
     <div class="row"><button class="btn pri" id="chok">إضافة</button><button class="btn" id="chcancel">إغلاق</button></div>
     <p style="font-size:12.5px;color:#6b5c45;margin:10px 0 0">بعد الإضافة يُحدَّد الابن الجديد مباشرة، فتستطيع أن تضيف له أبناءه (الأحفاد) بنفس الطريقة.</p>
+  </div>
+</div>
+<div id="loginm" class="modal2">
+  <div class="card" style="max-width:380px">
+    <h3>دخول المحرر</h3>
+    <label for="lgu">اسم المستخدم</label>
+    <input id="lgu" type="text" autocomplete="username" spellcheck="false" style="width:100%;padding:10px;border:1px solid #d9cfb5;border-radius:10px;font:inherit;margin-bottom:10px">
+    <label for="lgp">كلمة السر</label>
+    <input id="lgp" type="password" autocomplete="current-password" style="width:100%;padding:10px;border:1px solid #d9cfb5;border-radius:10px;font:inherit">
+    <div id="lgerr" style="color:#b3261e;font-size:13px;min-height:20px;margin-top:6px"></div>
+    <div class="row"><button class="btn pri" id="lgok">دخول</button><button class="btn" id="lgcancel">إغلاق</button></div>
   </div>
 </div>
 <div id="delm" class="modal2">
@@ -723,7 +735,12 @@ function select(id){
 }
 function editRow(n){
   if(n===T)return '';
-  if(typeof SHEET_URL!=='undefined'&&SHEET_URL)return '<div class="row"><button class="btn sm" data-act="copyrow">نسخ صف الجدول</button></div><p style="font-size:12px;color:#6b5c45;margin:6px 0 0">الجدول مرتبط: أضف الأبناء أو احذف الصف في Google Sheet ثم اضغط «تحديث».</p>';
+  var sheetMode=typeof SHEET_URL!=='undefined'&&SHEET_URL;
+  if(sheetMode){
+    if(window.__editor)return '<div class="row"><button class="btn sm pri" data-act="addkid">+ إضافة أبناء</button>'+(n===C?'':'<button class="btn sm danger" data-act="del">حذف</button>')+'</div>';
+    if(SHEET_DEFAULT&&location.hash!=='#admin')return '';
+    return '<div class="row"><button class="btn sm" data-act="copyrow">نسخ صف الجدول</button></div><p style="font-size:12px;color:#6b5c45;margin:6px 0 0">الجدول مرتبط: أضف الأبناء أو احذف الصف في Google Sheet ثم اضغط «تحديث».</p>';
+  }
   return '<div class="row"><button class="btn sm pri" data-act="addkid">+ إضافة أبناء</button>'+(n===C?'':'<button class="btn sm danger" data-act="del">حذف</button>')+'</div>';
 }
 function showPanel(n){
@@ -955,6 +972,8 @@ var curText=DATA,addMap={},addOk='';
 /* ---------- ربط Google Sheet ---------- */
 /* ضع هنا رابط النشر (CSV) ليرى كل من يفتح الصفحة آخر نسخة من الجدول دون أي إعداد */
 var SHEET_DEFAULT='https://docs.google.com/spreadsheets/d/e/2PACX-1vRQuMmvGUoZk-k0e1mc8PKAUeTp4oH5wc6TTP9dgX7SoC8QvwG48CthFMcKvbpMpn_wmUY8z8ICJBJK/pub?gid=0&single=true&output=csv';
+var API_DEFAULT='https://script.google.com/macros/s/AKfycbyIY_-scq8isaQVSy7p5eIipaWupC8S1zi__T5mgQ9T0otS6mxWrT9kkWnmfYgDSWT5PA/exec';
+var API_URL=API_DEFAULT;try{var _q=new URLSearchParams(location.search).get('api');if(_q)API_URL=_q}catch(_){}
 var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
 (function(){
   var sm=$('#sheetm');
@@ -984,17 +1003,26 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
     $('#btnRefresh').style.display=on?'':'none';
     $('#btnEdit').style.display=(on&&SHEET_EDIT)?'':'none';
     $('#btnSheet').textContent=on?'إعدادات الجدول':'ربط Google Sheet';
+    $('#btnLogin').style.display=(on&&API_URL)?'':'none';
     if(SHEET_DEFAULT&&location.hash!=='#admin'){$('#btnSheet').style.display='none';$('#btnData').style.display='none'}
   }
   window.syncSheet=async function(quiet){
     if(!SHEET_URL)return false;
     try{
-      var u=SHEET_URL+(SHEET_URL.indexOf('?')<0?'?':'&')+'_t='+Date.now();
-      var r=await fetch(u,{cache:'no-store'});
-      if(!r.ok)throw new Error('HTTP '+r.status);
-      var csv=await r.text();
-      var txt=sheetToText(csv,SHEET_ROOT);
-      if(!txt)throw new Error('لم أجد صفوف نسب في الجدول');
+      var urls=[],csv=null,lastErr=null,txt='';
+      if(API_URL)urls.push(API_URL+(API_URL.indexOf('?')<0?'?':'&')+'action=csv&_t='+Date.now());
+      urls.push(SHEET_URL+(SHEET_URL.indexOf('?')<0?'?':'&')+'_t='+Date.now());
+      for(var ui_=0;ui_<urls.length&&csv===null;ui_++){
+        try{
+          var r=await fetch(urls[ui_],{cache:'no-store'});
+          if(!r.ok)throw new Error('HTTP '+r.status);
+          var t_=await r.text();
+          var x_=sheetToText(t_,SHEET_ROOT);
+          if(!x_)throw new Error('لم أجد صفوف نسب في الجدول');
+          csv=t_;txt=x_;
+        }catch(e2){lastErr=e2}
+      }
+      if(csv===null)throw lastErr||new Error('تعذرت القراءة');
       var id=selId,keep={x:view.x,y:view.y,k:view.k},first=!sheetOn;
       var res=loadData(txt,treeTitle,false,preparer);
       if(typeof res==='string')throw new Error(res);
@@ -1049,6 +1077,7 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
   };
   $('#chcancel').onclick=function(){cm.classList.remove('on')};
   $('#chok').onclick=function(){
+    if(window.__apiOn&&window.__apiOn()){window.__apiAdd(curN,$('#chnames').value);return}
     var names=$('#chnames').value.split(/[\n,،;]+/).map(clean).filter(Boolean),err=$('#cherr');
     if(!names.length){err.textContent='اكتب الاسم أولاً.';return}
     var rows=parse(curText).rows,mx=0;
@@ -1067,6 +1096,7 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
   };
   $('#delcancel').onclick=function(){dm.classList.remove('on')};
   $('#delok').onclick=function(){
+    if(window.__apiOn&&window.__apiOn()){dm.classList.remove('on');window.__apiDel(curN);return}
     var n=curN,rows=parse(curText).rows,kill={};kill[n.id]=1;
     var ch=true;while(ch){ch=false;rows.forEach(function(r){if(!kill[r.id]&&r.fid&&kill[r.fid]){kill[r.id]=1;ch=true}})}
     var left=rows.filter(function(r){return !kill[r.id]});
@@ -1076,6 +1106,70 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
     toast(e?e:'تم حذف «'+pname+'»'+(cnt>1?' مع '+(cnt-1)+' من أحفاده':''));
   };
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){cm.classList.remove('on');dm.classList.remove('on')}});
+})();
+
+/* ---------- دخول المحرر والحفظ في الجدول عبر السكربت ---------- */
+(function(){
+  var lm=$('#loginm'),cred=null;
+  try{cred=JSON.parse(sessionStorage.getItem('clanEd')||'null')}catch(_){}
+  window.__editor=(API_URL&&cred&&cred.u)?cred.u:'';
+  window.__apiOn=function(){return !!(API_URL&&SHEET_URL&&window.__editor)};
+  function label(){var b=$('#btnLogin');b.textContent=window.__editor?('خروج المحرر ('+window.__editor+')'):'دخول المحرر';}
+  function refreshPanel(){if(selId&&NODES.get(selId)){var id=selId;selId=null;select(id)}}
+  async function post(b){
+    try{
+      var r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(b)});
+      return await r.json();
+    }catch(e){return {ok:false,error:'تعذر الاتصال بالسكربت. تأكد من الإنترنت ومن رابط السكربت.'}}
+  }
+  function pathOf(n){return n.lin.slice().reverse().filter(function(x){return !(T&&x===T.name&&n!==T)})}
+  function applyCsv(csv,selKey){
+    var txt=sheetToText(csv,SHEET_ROOT);if(!txt)return 'وصل جدول فارغ';
+    var keep={x:view.x,y:view.y,k:view.k};
+    var r=loadData(txt,treeTitle,false,preparer);if(typeof r==='string')return r;
+    sheetOn=true;view=keep;apply();
+    if(selKey){var hit=null;ALL.forEach(function(n){if(!n.virtual&&n.key===selKey)hit=n});if(hit){selId=null;select(hit.id)}}
+    return '';
+  }
+  function dead(msg){
+    if(/غير صحيحة/.test(msg||'')){window.__editor='';cred=null;try{sessionStorage.removeItem('clanEd')}catch(_){}label();refreshPanel()}
+  }
+  window.__apiAdd=async function(n,raw){
+    var err=$('#cherr'),names=raw.split(/[\n,،;]+/).map(clean).filter(Boolean);
+    if(!names.length){err.textContent='اكتب الاسم أولاً.';return}
+    err.textContent='جاري الحفظ في الجدول...';
+    var res=await post({action:'add',user:cred.u,pass:cred.p,path:pathOf(n),names:names});
+    if(!res.ok){err.textContent=res.error||'تعذر الحفظ';dead(res.error);return}
+    var selKey=norm([names[0]].concat(n.lin).join(' '));
+    var e=applyCsv(res.csv,selKey);
+    $('#childm').classList.remove('on');
+    toast(e?e:('تمت إضافة '+names.length+(names.length>1?' أسماء':' اسم')+' في الجدول'));
+  };
+  window.__apiDel=async function(n){
+    var pkey=n.parent&&!n.parent.virtual?n.parent.key:null,nm=n.name,d=n.desc;
+    clearSel();toast('جاري الحذف من الجدول...');
+    var res=await post({action:'del',user:cred.u,pass:cred.p,path:pathOf(n)});
+    if(!res.ok){toast(res.error||'تعذر الحذف');dead(res.error);return}
+    var e=applyCsv(res.csv,pkey);
+    toast(e?e:('تم حذف «'+nm+'»'+(d?' مع '+d+' من أحفاده':'')+' من الجدول'));
+  };
+  $('#btnLogin').onclick=function(){
+    if(window.__editor){window.__editor='';cred=null;try{sessionStorage.removeItem('clanEd')}catch(_){}label();refreshPanel();toast('تم تسجيل الخروج');return}
+    $('#lgerr').textContent='';$('#lgp').value='';lm.classList.add('on');setTimeout(function(){$('#lgu').focus()},50)
+  };
+  $('#lgcancel').onclick=function(){lm.classList.remove('on')};
+  async function doLogin(){
+    var u=clean($('#lgu').value),p=$('#lgp').value;
+    if(!u||!p){$('#lgerr').textContent='اكتب اسم المستخدم وكلمة السر.';return}
+    $('#lgerr').textContent='جاري التحقق...';
+    var res=await post({action:'login',user:u,pass:p});
+    if(!res.ok){$('#lgerr').textContent=res.error||'تعذر الدخول';return}
+    cred={u:u,p:p};try{sessionStorage.setItem('clanEd',JSON.stringify(cred))}catch(_){}
+    window.__editor=u;label();lm.classList.remove('on');refreshPanel();toast('مرحباً '+u+'، صار بإمكانك الإضافة والحذف');
+  }
+  $('#lgok').onclick=doLogin;
+  lm.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();if(e.key==='Escape')lm.classList.remove('on')});
+  label();
 })();
 
 /* ---------- start ---------- */
