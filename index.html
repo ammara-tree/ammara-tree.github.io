@@ -356,7 +356,7 @@ var labEl={},edgeEl={},topG=null;
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function norm(s){return String(s).replace(/[ً-ٰٟـ‎‏‪-‮]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/\s+/g,' ').trim().toLowerCase()}
 function clean(s){return String(s).replace(/[‎‏‪-‮]/g,'').replace(/\s+/g,' ').trim()}
-function toast(msg){var t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('on')},1800)}
+function toast(msg,ms){var t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('on')},ms||1800)}
 function rng(seed){return function(){seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296}}
 function hash(s){var h=7;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h}
 function f1(x){return Math.round(x*10)/10}
@@ -1409,16 +1409,16 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
     $('#pvnote').textContent=pv.proc?(pv.showProc?'خلفية بيضاء وقصّ للوجه والكتفين. يمكنك مقارنتها بالأصلية قبل الحفظ.':'هذه الصورة بدون أي تعديل على الخلفية.'):('لم تُعالج الخلفية: '+(pv.err||'خطأ غير معروف')+'. سيُحفظ الأصل مقصوصاً مربعاً.');
   }
   async function uploadPhoto(n,d){
-    toast('جاري رفع الصورة...');
+    toast('جاري رفع الصورة... لا تغلق الصفحة',60000);
     var res=await post({action:'photo',user:cred.u,pass:cred.p,path:pathOf(n),image:d});
-    if(!res.ok){toast(res.error||'تعذر رفع الصورة');dead(res.error);return}
-    PH[window.__photoKey(n)]=res.id;refreshPanel();if(window.__rerender)window.__rerender();toast('تم حفظ صورة «'+n.name+'»');
+    if(!res.ok){toast('فشل رفع الصورة: '+(res.error||'خطأ غير معروف'),12000);dead(res.error);return}
+    PH[window.__photoKey(n)]=res.id;refreshPanel();if(window.__rerender)window.__rerender();toast('تم حفظ صورة «'+n.name+'»',4000);
   }
   $('#pvcancel').onclick=function(){$('#phprev').classList.remove('on');pv=null};
   $('#pvtoggle').onclick=function(){if(pv){pv.showProc=!pv.showProc;pvShow()}};
   $('#pvsave').onclick=async function(){
     if(!pv)return;var p=pv;$('#phprev').classList.remove('on');pv=null;
-    try{await uploadPhoto(p.n,p.showProc?p.proc:p.orig)}catch(e){toast('تعذر رفع الصورة')}
+    try{await uploadPhoto(p.n,p.showProc?p.proc:p.orig)}catch(e){toast('فشل رفع الصورة: '+(e&&e.message||e),12000)}
   };
   $('#phfile').onchange=async function(){
     var f=this.files&&this.files[0],n=phTarget;if(!f||!n)return;
