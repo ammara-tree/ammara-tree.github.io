@@ -1425,6 +1425,7 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
     if(!/^image\//.test(f.type)){toast('اختر ملف صورة');return}
     try{
       toast('جاري تجهيز الصورة...');
+      try{f=new Blob([await f.arrayBuffer()],{type:f.type||'image/jpeg'})}catch(_){}
       var orig=await squareJpeg(f),proc=null,err='';
       try{toast(window.__seg?'جاري إزالة الخلفية...':'جاري تحميل أداة إزالة الخلفية (أول مرة فقط)...');proc=await blackPortrait(f)}
       catch(e){err=(e&&e.message)||''}
