@@ -839,12 +839,13 @@ function showPanel(n){
   panel.innerHTML='<button class="x" data-act="close" title="إلغاء التحديد">×</button>'+
    (function(){var u=window.__photoUrl&&window.__photoUrl(n,240);return u?'<div class="ph"><button class="av" data-act="zoom" title="تكبير الصورة"><img src="'+u+'" alt="" referrerpolicy="no-referrer"></button><h2>'+esc(n.name)+'</h2></div>':'<h2>'+esc(n.name)+'</h2>'})()+
    '<div class="lin">'+esc(lineageText(n))+'</div>'+
-   '<div class="stats"><div class="stat"><b>'+n.depth+'</b><span>الجيل</span></div>'+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(n.kids.length,'kids','الأبناء')+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(sib,'sibs','الإخوة')+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(n.desc,'desc','الأحفاد')+'</div><div id="stl" class="stlist" hidden></div>'+
+   '<div class="stats"><div class="stat"><b>'+n.depth+'</b><span>الجيل</span></div>'+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(n.kids.length,'kids','الأبناء')+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(sib,'sibs','الإخوة')+(function(v,k,l){return v?'<button class="stat tap" data-open="'+k+'"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="stat"><b>'+v+'</b><span>'+l+'</span></div>'})(gcOf(n).length,'desc','الأحفاد')+'</div><div id="stl" class="stlist" hidden></div>'+
    par+
    '<div class="row"><button class="btn" data-act="copy">نسخ النسب</button><button class="btn" data-act="fit">كل الشجرة</button></div>'+editRow(n);
   panel.hidden=false;
 }
 
+function gcOf(n){var a=[];n.kids.forEach(function(k){k.kids.forEach(function(c){a.push(c)})});return a}
 function toggleStat(kind,btn){
   var n=NODES.get(selId),box=document.getElementById('stl');if(!n||!box)return;
   var was=btn.classList.contains('act');
@@ -855,11 +856,7 @@ function toggleStat(kind,btn){
   var h='';
   if(kind==='kids')h='<div class="gh">أبناء '+esc(n.name)+' ('+n.kids.length+')</div>'+chips(n.kids);
   else if(kind==='sibs'){var sb=n.parent?n.parent.kids.filter(function(k){return k!==n}):[];h='<div class="gh">إخوة '+esc(n.name)+' ('+sb.length+')</div>'+chips(sb)}
-  else{
-    var lvl=n.kids.slice(),d=1;
-    h='<div class="gh">كل أحفاد '+esc(n.name)+' ('+n.desc+')</div>';
-    while(lvl.length){h+='<div class="gh sub">الجيل '+(n.depth+d)+' — '+lvl.length+'</div>'+chips(lvl);var nx=[];lvl.forEach(function(k){k.kids.forEach(function(c){nx.push(c)})});lvl=nx;d++}
-  }
+  else{var gc=gcOf(n);h='<div class="gh">أحفاد '+esc(n.name)+' ('+gc.length+')</div>'+chips(gc)}
   box.innerHTML=h;box.hidden=false;
 }
 panel.addEventListener('click',function(e){
