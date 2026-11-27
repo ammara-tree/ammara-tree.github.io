@@ -172,7 +172,6 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
     <div id="list"></div>
   </div>
   <button class="btn pri" id="btnAdd">+ إضافة اسم</button>
-  <button class="btn" id="btnRefresh" style="display:none">⟳ تحديث من الجدول</button>
   <button class="btn" id="btnEdit" style="display:none">✎ فتح الجدول</button>
   <button class="btn" id="btnSheet">ربط Google Sheet</button>
   <button class="btn" id="btnUsers" style="display:none">إدارة المحررين</button>
@@ -1106,7 +1105,6 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
   function ui(){
     var on=!!SHEET_URL;
     $('#btnAdd').style.display=on?'none':'';
-    $('#btnRefresh').style.display=on?'':'none';
     $('#btnEdit').style.display=(on&&SHEET_EDIT)?'':'none';
     $('#btnSheet').textContent=on?'إعدادات الجدول':'ربط Google Sheet';
     $('#btnLogin').style.display=(on&&API_URL)?'':'none';
@@ -1153,7 +1151,8 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
     var ok=await syncSheet(false);
     if(ok)sm.classList.remove('on');else $('#serr').textContent='تعذرت القراءة. تأكد أنك نشرت الجدول على الويب بصيغة CSV وأن الرابط صحيح.';
   };
-  $('#btnRefresh').onclick=function(){syncSheet(false)};
+  var lastSync=Date.now();
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&sheetOn&&Date.now()-lastSync>30000){lastSync=Date.now();syncSheet(true)}});
   $('#btnEdit').onclick=function(){try{window.open(SHEET_EDIT,'_blank')}catch(_){toast(SHEET_EDIT)}};
   document.addEventListener('keydown',function(e){if(e.key==='Escape')sm.classList.remove('on')});
   cfgLoad();ui();
