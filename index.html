@@ -105,6 +105,19 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
 #toast.on{opacity:1;transform:translateX(-50%)}
 #modal{position:fixed;inset:0;background:rgba(40,28,18,.5);display:none;align-items:center;justify-content:center;z-index:90;padding:16px}
 #modal.on,#addm.on,#sheetm.on,#childm.on,#delm.on,#loginm.on{display:flex}
+.ph{display:flex;align-items:center;gap:12px;margin:0 0 6px;padding-inline-end:26px}
+.ph .av{width:78px;height:78px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.28);padding:0;overflow:hidden;background:#eef6f0;flex:none;cursor:zoom-in}
+.ph .av img{width:100%;height:100%;object-fit:cover;display:block}
+.ph h2{margin:0!important}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.84);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:96;padding:16px;cursor:zoom-out}
+#lb.on{display:flex}
+#lb img{max-width:92vw;max-height:78vh;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.5);background:#222}
+#lb span{color:#fff;font-weight:800;font-size:19px;text-align:center}
+#usersm{position:fixed;inset:0;background:rgba(40,28,18,.5);display:none;align-items:center;justify-content:center;z-index:95;padding:16px}
+#usersm.on{display:flex}
+#umlist{margin:8px 0 14px;max-height:200px;overflow:auto}
+.umr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#faf4e4;border-radius:10px;margin-bottom:6px;font-weight:700}
+.umr small{color:#8a7a62;font-weight:600}
 #gate{position:fixed;inset:0;background:rgba(18,32,24,.6);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;z-index:93;padding:16px}
 #gate.on{display:flex}
 .gcard{max-width:380px;text-align:center}
@@ -153,6 +166,7 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
   <button class="btn" id="btnRefresh" style="display:none">⟳ تحديث من الجدول</button>
   <button class="btn" id="btnEdit" style="display:none">✎ فتح الجدول</button>
   <button class="btn" id="btnSheet">ربط Google Sheet</button>
+  <button class="btn" id="btnUsers" style="display:none">إدارة المحررين</button>
   <button class="btn" id="btnLogin" style="display:none">دخول المحرر</button>
   <button class="btn" id="btnTheme">الخلفية: فاتح</button>
   <button class="btn" id="btnData">تحميل البيانات</button>
@@ -188,6 +202,23 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
     <div id="cherr" style="color:#b3261e;font-size:13px;min-height:18px"></div>
     <div class="row"><button class="btn pri" id="chok">إضافة</button><button class="btn" id="chcancel">إغلاق</button></div>
     <p style="font-size:12.5px;color:#6b5c45;margin:10px 0 0">بعد الإضافة يُحدَّد الابن الجديد مباشرة، فتستطيع أن تضيف له أبناءه (الأحفاد) بنفس الطريقة.</p>
+  </div>
+</div>
+<input type="file" id="phfile" accept="image/*" style="display:none">
+<div id="lb"><img id="lbimg" alt=""><span id="lbcap"></span></div>
+<div id="usersm">
+  <div class="card" style="max-width:420px">
+    <h3 id="umtitle">إدارة المحررين</h3>
+    <div id="umlist"></div>
+    <div id="umform">
+      <label for="umname" id="umnamel">اسم المستخدم الجديد</label>
+      <input id="umname" type="text" autocomplete="off" spellcheck="false" style="width:100%;padding:10px;border:1px solid #d9cfb5;border-radius:10px;font:inherit;margin-bottom:10px">
+      <label for="umpass" id="umpassl">كلمة السر (6 أحرف على الأقل)</label>
+      <input id="umpass" type="text" autocomplete="off" spellcheck="false" style="width:100%;padding:10px;border:1px solid #d9cfb5;border-radius:10px;font:inherit">
+    </div>
+    <div id="umerr" style="color:#b3261e;font-size:13px;min-height:20px;margin-top:6px"></div>
+    <div class="row"><button class="btn pri" id="umok">إضافة المحرر</button><button class="btn" id="umclose">إغلاق</button></div>
+    <small id="umnote" style="display:block;margin-top:8px;color:#8a7a62;line-height:1.7"></small>
   </div>
 </div>
 <div id="gate">
@@ -754,7 +785,7 @@ function editRow(n){
   if(n===T)return '';
   var sheetMode=typeof SHEET_URL!=='undefined'&&SHEET_URL;
   if(sheetMode){
-    if(window.__editor)return '<div class="row"><button class="btn sm pri" data-act="addkid">+ إضافة أبناء</button>'+(n===C?'':'<button class="btn sm danger" data-act="del">حذف</button>')+'</div>';
+    if(window.__editor){var hp=!!(window.__photoUrl&&window.__photoUrl(n,50));return '<div class="row"><button class="btn sm pri" data-act="addkid">+ إضافة أبناء</button>'+(n===C?'':'<button class="btn sm danger" data-act="del">حذف</button>')+'</div><div class="row"><button class="btn sm" data-act="photo">📷 '+(hp?'تغيير الصورة':'إضافة صورة')+'</button>'+(hp?'<button class="btn sm danger" data-act="photodel">حذف الصورة</button>':'')+'</div>'}
     if(SHEET_DEFAULT&&location.hash!=='#admin')return '';
     return '<div class="row"><button class="btn sm" data-act="copyrow">نسخ صف الجدول</button></div><p style="font-size:12px;color:#6b5c45;margin:6px 0 0">الجدول مرتبط: أضف الأبناء أو احذف الصف في Google Sheet ثم اضغط «تحديث».</p>';
   }
@@ -765,7 +796,7 @@ function showPanel(n){
   var kids=n.kids.slice(0,40).map(function(k){return '<button class="chip" data-go="'+esc(k.id)+'">'+esc(k.name)+'</button>'}).join('');
   var par=(n.parent&&!n.parent.virtual)?'<div class="sec">الأب</div><div class="chips"><button class="chip" data-go="'+esc(n.parent.id)+'">'+esc(n.parent.name)+'</button></div>':'';
   panel.innerHTML='<button class="x" data-act="close" title="إلغاء التحديد">×</button>'+
-   '<h2>'+esc(n.name)+'</h2>'+
+   (function(){var u=window.__photoUrl&&window.__photoUrl(n,240);return u?'<div class="ph"><button class="av" data-act="zoom" title="تكبير الصورة"><img src="'+u+'" alt="" referrerpolicy="no-referrer"></button><h2>'+esc(n.name)+'</h2></div>':'<h2>'+esc(n.name)+'</h2>'})()+
    '<div class="lin">'+esc(lineageText(n))+'</div>'+
    '<div class="stats"><div class="stat"><b>'+n.depth+'</b><span>الجيل</span></div><div class="stat"><b>'+n.kids.length+'</b><span>الأبناء</span></div><div class="stat"><b>'+sib+'</b><span>الإخوة</span></div><div class="stat"><b>'+n.desc+'</b><span>الأحفاد</span></div></div>'+
    par+(kids?'<div class="sec">الأبناء</div><div class="chips">'+kids+'</div>':'')+
@@ -779,6 +810,7 @@ panel.addEventListener('click',function(e){
   else if(b.dataset.act==='fit'){clearSel();fit(true)}
   else if(b.dataset.act==='addkid'&&selId){window.openKids(NODES.get(selId))}
   else if(b.dataset.act==='del'&&selId){window.askDelete(NODES.get(selId))}
+  else if((b.dataset.act==='zoom'||b.dataset.act==='photo'||b.dataset.act==='photodel')&&selId){window.__photoAct&&window.__photoAct(b.dataset.act,selId)}
   else if(b.dataset.act==='copyrow'&&selId){
     var nn=NODES.get(selId),cells=nn.lin.slice().reverse().filter(function(x){return !(T&&x===T.name&&nn!==T)});
     var tx=cells.join('\t');
@@ -1130,8 +1162,10 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
   var lm=$('#loginm'),cred=null;
   try{cred=JSON.parse(sessionStorage.getItem('clanEd')||'null')}catch(_){}
   window.__editor=(API_URL&&cred&&cred.u)?cred.u:'';
+  window.__role='';
   window.__apiOn=function(){return !!(API_URL&&SHEET_URL&&window.__editor)};
-  function label(){var b=$('#btnLogin');b.textContent=window.__editor?('خروج المحرر ('+window.__editor+')'):'دخول المحرر';}
+  function label(){var b=$('#btnLogin');b.textContent=window.__editor?('خروج المحرر ('+window.__editor+')'):'دخول المحرر';
+    var u=$('#btnUsers');u.style.display=(window.__editor&&window.__role)?'':'none';u.textContent=window.__role==='admin'?'إدارة المحررين':'تغيير كلمة السر';}
   function refreshPanel(){if(selId&&NODES.get(selId)){var id=selId;selId=null;select(id)}}
   async function post(b){
     try{
@@ -1149,7 +1183,7 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
     return '';
   }
   function dead(msg){
-    if(/غير صحيحة/.test(msg||'')){window.__editor='';cred=null;try{sessionStorage.removeItem('clanEd')}catch(_){}label();refreshPanel()}
+    if(/غير صحيحة/.test(msg||'')){window.__editor='';window.__role='';cred=null;try{sessionStorage.removeItem('clanEd')}catch(_){}label();refreshPanel()}
   }
   window.__apiAdd=async function(n,raw){
     var err=$('#cherr'),names=raw.split(/[\n,،;]+/).map(clean).filter(Boolean);
@@ -1171,7 +1205,7 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
     toast(e?e:('تم حذف «'+nm+'»'+(d?' مع '+d+' من أحفاده':'')+' من الجدول'));
   };
   $('#btnLogin').onclick=function(){
-    if(window.__editor){window.__editor='';cred=null;try{sessionStorage.removeItem('clanEd')}catch(_){}label();refreshPanel();toast('تم تسجيل الخروج');return}
+    if(window.__editor){window.__editor='';window.__role='';cred=null;try{sessionStorage.removeItem('clanEd')}catch(_){}label();refreshPanel();toast('تم تسجيل الخروج');return}
     $('#lgerr').textContent='';$('#lgp').value='';lm.classList.add('on');setTimeout(function(){$('#lgu').focus()},50)
   };
   $('#lgcancel').onclick=function(){lm.classList.remove('on')};
@@ -1182,10 +1216,105 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
     var res=await post({action:'login',user:u,pass:p});
     if(!res.ok){$('#lgerr').textContent=res.error||'تعذر الدخول';return}
     cred={u:u,p:p};try{sessionStorage.setItem('clanEd',JSON.stringify(cred))}catch(_){}
-    window.__editor=u;label();lm.classList.remove('on');refreshPanel();toast('مرحباً '+u+'، صار بإمكانك الإضافة والحذف');
+    window.__editor=u;window.__role=res.role||'editor';label();lm.classList.remove('on');refreshPanel();toast('مرحباً '+u+'، صار بإمكانك الإضافة والحذف');
   }
   $('#lgok').onclick=doLogin;
   lm.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();if(e.key==='Escape')lm.classList.remove('on')});
+  /* --- الصور --- */
+  var PH={},phTarget=null;
+  function k_(s){return String(s).replace(/[\u200e\u200f\u202a-\u202e]/g,'').replace(/\s+/g,' ').trim().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه')}
+  window.__photoKey=function(n){return pathOf(n).map(k_).join('>')};
+  window.__photoUrl=function(n,sz){var id=API_URL&&PH[window.__photoKey(n)];return id?('https://drive.google.com/thumbnail?id='+encodeURIComponent(id)+'&sz=w'+(sz||240)):''};
+  async function loadPhotos(){
+    try{var r=await fetch(API_URL+(API_URL.indexOf('?')<0?'?':'&')+'action=photos&_t='+Date.now(),{cache:'no-store'});var j=await r.json();if(j&&j.ok){PH=j.photos||{};refreshPanel()}}catch(_){}
+  }
+  function squareJpeg(file){
+    return new Promise(function(res,rej){
+      var url=URL.createObjectURL(file),im=new Image();
+      im.onload=function(){
+        var S=560,c=document.createElement('canvas');c.width=c.height=S;var x=c.getContext('2d');
+        var m=Math.min(im.naturalWidth,im.naturalHeight),sx=(im.naturalWidth-m)/2,sy=(im.naturalHeight-m)/2;
+        x.fillStyle='#fff';x.fillRect(0,0,S,S);x.drawImage(im,sx,sy,m,m,0,0,S,S);
+        var q=.82,d=c.toDataURL('image/jpeg',q);
+        while(d.length>380000&&q>.4){q-=.1;d=c.toDataURL('image/jpeg',q)}
+        URL.revokeObjectURL(url);res(d)};
+      im.onerror=function(){URL.revokeObjectURL(url);rej(new Error('تعذرت قراءة الصورة'))};
+      im.src=url;
+    });
+  }
+  window.__photoAct=async function(act,id){
+    var n=NODES.get(id);if(!n)return;
+    if(act==='zoom'){var u=window.__photoUrl(n,1000);if(!u)return;$('#lbimg').src=u;$('#lbcap').textContent=n.name;$('#lb').classList.add('on');return}
+    if(!window.__apiOn())return;
+    if(act==='photo'){phTarget=n;$('#phfile').value='';$('#phfile').click();return}
+    if(act==='photodel'){
+      if(!confirm('حذف صورة «'+n.name+'»؟'))return;
+      toast('جاري حذف الصورة...');
+      var res=await post({action:'photodel',user:cred.u,pass:cred.p,path:pathOf(n)});
+      if(!res.ok){toast(res.error||'تعذر الحذف');dead(res.error);return}
+      delete PH[window.__photoKey(n)];refreshPanel();toast('تم حذف الصورة');
+    }
+  };
+  $('#phfile').onchange=async function(){
+    var f=this.files&&this.files[0],n=phTarget;if(!f||!n)return;
+    if(!/^image\//.test(f.type)){toast('اختر ملف صورة');return}
+    try{
+      toast('جاري تجهيز الصورة...');
+      var d=await squareJpeg(f);
+      toast('جاري رفع الصورة...');
+      var res=await post({action:'photo',user:cred.u,pass:cred.p,path:pathOf(n),image:d});
+      if(!res.ok){toast(res.error||'تعذر رفع الصورة');dead(res.error);return}
+      PH[window.__photoKey(n)]=res.id;refreshPanel();toast('تم حفظ صورة «'+n.name+'»');
+    }catch(e){toast(e&&e.message?e.message:'تعذر رفع الصورة')}
+  };
+  $('#lb').onclick=function(){$('#lb').classList.remove('on')};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')$('#lb').classList.remove('on')});
+  if(API_URL&&SHEET_URL)loadPhotos();
+  /* --- إدارة المحررين --- */
+  var um=$('#usersm');
+  function renderUsers(eds,admins){
+    var h='';
+    (admins||[]).forEach(function(a){h+='<div class="umr"><span>'+esc(a)+' <small>مدير</small></span></div>'});
+    (eds||[]).forEach(function(e){h+='<div class="umr"><span>'+esc(e)+' <small>محرر</small></span><button class="btn sm danger" data-del="'+esc(e)+'">حذف</button></div>'});
+    $('#umlist').innerHTML=h||'<div class="umr"><small>لا يوجد محررون بعد</small></div>';
+  }
+  async function loadUsers(){
+    $('#umlist').innerHTML='<div class="umr"><small>جاري التحميل...</small></div>';
+    var res=await post({action:'users',user:cred.u,pass:cred.p});
+    if(res.ok)renderUsers(res.editors,res.admins);else{$('#umlist').innerHTML='';$('#umerr').textContent=res.error||'تعذر التحميل';dead(res.error)}
+  }
+  $('#btnUsers').onclick=function(){
+    var adm=window.__role==='admin';
+    $('#umerr').textContent='';$('#umname').value='';$('#umpass').value='';
+    $('#umtitle').textContent=adm?'إدارة المحررين':'تغيير كلمة السر';
+    $('#umlist').style.display=adm?'':'none';
+    $('#umnamel').style.display=$('#umname').style.display=adm?'':'none';
+    $('#umpassl').textContent=adm?'كلمة السر (6 أحرف على الأقل)':'كلمة السر الجديدة (6 أحرف على الأقل)';
+    $('#umok').textContent=adm?'إضافة المحرر':'حفظ كلمة السر';
+    $('#umnote').textContent=adm?'لتغيير كلمة سر محرر موجود، أضفه بنفس الاسم وكلمة سر جديدة. المديرون يغيّرون كلمة سرهم من داخل السكربت.':'';
+    um.classList.add('on');if(adm)loadUsers();else setTimeout(function(){$('#umpass').focus()},50);
+  };
+  $('#umclose').onclick=function(){um.classList.remove('on')};
+  um.addEventListener('pointerdown',function(e){if(e.target===um)um.classList.remove('on')});
+  $('#umok').onclick=async function(){
+    var adm=window.__role==='admin',pw=$('#umpass').value,name=clean($('#umname').value),err=$('#umerr');
+    if(adm&&!name){err.textContent='اكتب اسم المستخدم.';return}
+    if(pw.length<6){err.textContent='كلمة السر 6 أحرف على الأقل.';return}
+    err.textContent='جاري الحفظ...';
+    var res=adm?await post({action:'useradd',user:cred.u,pass:cred.p,name:name,newpass:pw}):await post({action:'chpass',user:cred.u,pass:cred.p,newpass:pw});
+    if(!res.ok){err.textContent=res.error||'تعذر الحفظ';dead(res.error);return}
+    $('#umpass').value='';err.textContent='';
+    if(adm){$('#umname').value='';renderUsers(res.editors,res.admins);toast(res.existed?'تم تغيير كلمة سر «'+name+'»':'تمت إضافة المحرر «'+name+'»')}
+    else{cred.p=pw;try{sessionStorage.setItem('clanEd',JSON.stringify(cred))}catch(_){}um.classList.remove('on');toast('تم تغيير كلمة السر')}
+  };
+  $('#umlist').addEventListener('click',async function(e){
+    var b=e.target.closest('button[data-del]');if(!b)return;var nm=b.getAttribute('data-del');
+    if(!confirm('حذف المحرر «'+nm+'»؟ لن يستطيع الدخول بعد الآن.'))return;
+    var res=await post({action:'userdel',user:cred.u,pass:cred.p,name:nm});
+    if(!res.ok){$('#umerr').textContent=res.error||'تعذر الحذف';dead(res.error);return}
+    renderUsers(res.editors,res.admins);toast('تم حذف المحرر «'+nm+'»');
+  });
+  if(window.__editor&&cred){post({action:'login',user:cred.u,pass:cred.p}).then(function(res){if(res.ok){window.__role=res.role||'editor';label()}else if(/غير صحيحة/.test(res.error||'')){dead(res.error)}})}
   var gate=$('#gate');
   function showGate(){if(API_URL&&SHEET_URL&&!window.__editor&&location.hash!=='#admin')gate.classList.add('on')}
   $('#gVis').onclick=function(){gate.classList.remove('on')};
