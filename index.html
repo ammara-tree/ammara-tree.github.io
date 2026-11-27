@@ -104,7 +104,15 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
 #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:#2f2119;color:#fff;padding:9px 18px;border-radius:30px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:100}
 #toast.on{opacity:1;transform:translateX(-50%)}
 #modal{position:fixed;inset:0;background:rgba(40,28,18,.5);display:none;align-items:center;justify-content:center;z-index:90;padding:16px}
-#modal.on,#addm.on,#sheetm.on,#childm.on,#delm.on{display:flex}
+#modal.on,#addm.on,#sheetm.on,#childm.on,#delm.on,#loginm.on{display:flex}
+#gate{position:fixed;inset:0;background:rgba(18,32,24,.6);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;z-index:93;padding:16px}
+#gate.on{display:flex}
+.gcard{max-width:380px;text-align:center}
+.gcard .gt{font-size:24px;font-weight:800;color:var(--green-d);margin-bottom:2px}
+.gcard p{margin:4px 0 16px;color:#6b5c45}
+.gcard .big{display:block;width:100%;padding:14px;font-size:17px;margin:0 0 10px}
+.gcard small{display:block;margin-top:6px;color:#8a7a62;font-size:12.5px;line-height:1.6}
+#loginm{position:fixed;inset:0;background:rgba(40,28,18,.5);display:none;align-items:center;justify-content:center;z-index:94;padding:16px}
 #childm,#delm{position:fixed;inset:0;background:rgba(40,28,18,.5);display:none;align-items:center;justify-content:center;z-index:93;padding:16px}
 #chnames{direction:rtl;text-align:right;font-family:Cairo,Tahoma,sans-serif;font-size:14px}
 .btn.sm{padding:7px 12px;font-size:13px}
@@ -180,6 +188,15 @@ body.bd-white header{background:#fff;border-bottom:2px solid #d8d8d8;box-shadow:
     <div id="cherr" style="color:#b3261e;font-size:13px;min-height:18px"></div>
     <div class="row"><button class="btn pri" id="chok">إضافة</button><button class="btn" id="chcancel">إغلاق</button></div>
     <p style="font-size:12.5px;color:#6b5c45;margin:10px 0 0">بعد الإضافة يُحدَّد الابن الجديد مباشرة، فتستطيع أن تضيف له أبناءه (الأحفاد) بنفس الطريقة.</p>
+  </div>
+</div>
+<div id="gate">
+  <div class="card gcard">
+    <div class="gt">شجرة عائلة ال عمارة</div>
+    <p>اختر طريقة الدخول</p>
+    <button class="btn pri big" id="gEd">دخول كمحرر</button>
+    <button class="btn big" id="gVis">دخول كزائر</button>
+    <small>المحرر يضيف الأسماء ويحذفها، والزائر يتصفح الشجرة ويبحث فيها.</small>
   </div>
 </div>
 <div id="loginm" class="modal2">
@@ -1169,7 +1186,14 @@ var SHEET_URL=SHEET_DEFAULT,SHEET_EDIT='',SHEET_ROOT='حمزة',sheetOn=false;
   }
   $('#lgok').onclick=doLogin;
   lm.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();if(e.key==='Escape')lm.classList.remove('on')});
-  label();
+  var gate=$('#gate');
+  function showGate(){if(API_URL&&SHEET_URL&&!window.__editor&&location.hash!=='#admin')gate.classList.add('on')}
+  $('#gVis').onclick=function(){gate.classList.remove('on')};
+  $('#gEd').onclick=function(){$('#btnLogin').click()};
+  var _lgok=doLogin;
+  doLogin=async function(){await _lgok();if(window.__editor)gate.classList.remove('on')};
+  $('#lgok').onclick=doLogin;
+  label();showGate();
 })();
 
 /* ---------- start ---------- */
