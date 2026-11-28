@@ -43,6 +43,7 @@ header{display:flex;align-items:center;gap:14px;padding:10px 16px;background:lin
 #stage:active{cursor:grabbing}
 svg{width:100%;height:100%;display:block;direction:ltr}
 #poster{}
+#svg{overflow:visible}
 #svg,#svg *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 @media(max-width:720px){.mv .lab .tx{stroke:none}.mv .edge{transition:none}}
 
@@ -809,11 +810,21 @@ function fitTexts(g){
 function lineageText(n){return n.lin.join(' بن ')}
 
 /* ---------- view ---------- */
-var _ap=0,_mvT=0;
+var _ap=0,_mvT=0,_cm=null,_mob=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||innerWidth<=720;
+function commitView(){
+  vp.setAttribute('transform','translate('+view.x+' '+view.y+') scale('+view.k+')');
+  svg.style.transform='';svg.style.willChange='';_cm={x:view.x,y:view.y,k:view.k};
+  document.body.classList.remove('mv');
+}
 function apply(){
   if(_ap)return;_ap=requestAnimationFrame(function(){_ap=0;
-    vp.setAttribute('transform','translate('+view.x+' '+view.y+') scale('+view.k+')');
-    if(innerWidth<=720){document.body.classList.add('mv');clearTimeout(_mvT);_mvT=setTimeout(function(){document.body.classList.remove('mv')},180)}
+    if(!_mob||!_cm){commitView();return}
+    /* الهاتف: نحرّك طبقة جاهزة بكرت الشاشة ثم نعيد الرسم بوضوح عند التوقف */
+    var s=view.k/_cm.k,tx=view.x-_cm.x*s,ty=view.y-_cm.y*s;
+    svg.style.transformOrigin='0 0';svg.style.willChange='transform';
+    svg.style.transform='translate3d('+tx+'px,'+ty+'px,0) scale('+s+')';
+    document.body.classList.add('mv');
+    clearTimeout(_mvT);_mvT=setTimeout(commitView,170);
   });
 }
 function size(){var r=stage.getBoundingClientRect();return {W:r.width,H:r.height}}
